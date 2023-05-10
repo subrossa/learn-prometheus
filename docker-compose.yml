@@ -10,11 +10,13 @@ volumes:
 
 services:
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus
     container_name: prometheus
     restart: unless-stopped
+    stdin_open: true
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/:/etc/prometheus/
       - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
@@ -22,6 +24,7 @@ services:
       - '--web.console.libraries=/etc/prometheus/console_libraries'
       - '--web.console.templates=/etc/prometheus/consoles'
       - '--web.enable-lifecycle'
+      #- '--alert.rules=/etc/prometheus/alert.yml'
     ports:
       - 9090:9090
     networks:
@@ -56,6 +59,40 @@ services:
      - ./grafana:/var/lib/grafana
     networks:
      - monitoring
+
+  apache:
+    image: bitnami/apache:latest
+    container_name: apache-app
+    ports:
+    - '8080:80'
+    volumes:
+    - ./website:/usr/local/apache2/htdocs 
+    networks:
+     - monitoring
     
+
+  apache-exporter:
+    image: bitnami/apache-exporter:latest
+    container_name: apache-exporter
+    ports:
+    - '9117:9117'
+    command:
+    - --scrape_uri=http://localhost:8080/server-status/?auto
+    networks:
+     - monitoring
+
+  alertmanager:
+    image: prom/alertmanager:v0.12.0
+    ports:
+      - 9093:9093
+    volumes:
+      - ./alertmanager/:/etc/alertmanager/
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/alertmanager/config.yml'
+      - '--storage.path=/alertmanager'
+    networks:
+      - monitoring
+  
 
   
