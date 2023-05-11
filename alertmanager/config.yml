@@ -1,19 +1,33 @@
 global:
   resolve_timeout: 5m
+  #pagerduty_url: 'https://events.pagerduty.com/v2/enqueue'
 
 route:
   group_by: ['alertname']
   group_wait: 10s
   group_interval: 10s
-  repeat_interval: 1h
-  receiver: 'web.hook'
+  #repeat_interval: 1h
+  receiver: 'PagerDuty'
+  
+  #routes: 
+  #- receiver: 'PagerDuty'
+   # group_by: ['cluster']
+
+
 receivers:
 - name: 'web.hook'
   webhook_configs:
   - url: 'http://127.0.0.1:5001/'
+
+- name: 'PagerDuty'
+  pagerduty_configs:
+  - service_key: 'e49b7fd116cf4605c1e0a138efaa5dd8'
+
 inhibit_rules:
   - source_match:
       severity: 'critical'
     target_match:
       severity: 'warning'
     equal: ['alertname', 'dev', 'instance']
+
+
